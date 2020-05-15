@@ -1,7 +1,6 @@
-/ChatServer$1.class
-/ChatServerHandler.class
-/ChatClient.class
-/ChatClient$1.class
-/ChatClientHandler.class
-/ChatClient$2.class
-/ChatClient$3.class
+/MasterMind/
+/game/
+/ServerHandler$ServerState.class
+/ServerHandler.class
+/ServerMain$1.class
+/ServerMain.class

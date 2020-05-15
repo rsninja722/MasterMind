@@ -4,4 +4,5 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/netty"/>
 	<classpathentry kind="output" path="bin"/>
+    <classpathentry kind="lib" path="lib/netty-all-4.1.49.Final.jar"/>
 </classpath>
