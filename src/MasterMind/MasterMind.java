@@ -1,9 +1,12 @@
 package MasterMind;
 
+import java.util.ArrayList;
+
+import MasterMind.StateManagers.Playing;
 import MasterMind.StateManagers.PracticeConnecting;
 import MasterMind.StateManagers.TitleScreen;
-import MasterMind.gameComponents.CodePeg;
 import game.*;
+import game.drawing.Draw;
 
 /*
 non essentials that would be nice to have:
@@ -24,14 +27,46 @@ public class MasterMind extends GameJava {
     static public GameState state;
     static GameState lastState;
 
-    static CodePeg peg;
+    static public boolean gameRunning = true;
+
+    static public boolean isPractice = false;
+
+    static public ArrayList<String> clientMessagesIn = new ArrayList<String>();
+    static public ArrayList<String> clientMessagesOut = new ArrayList<String>();
+
+    static public boolean clientReadyToJoin = false;
+
+    static public ArrayList<String> botMessagesIn = new ArrayList<String>();
+    static public ArrayList<String> botMessagesOut = new ArrayList<String>();
+
+    static public boolean clientReceivedMessage(String msg) {
+        for(int i=0;i<clientMessagesIn.size();i++) {
+            if(clientMessagesIn.get(i).equals(msg)) {
+                clientMessagesIn.remove(i);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static public boolean botReceivedMessage(String msg) {
+        for(int i=0;i<botMessagesIn.size();i++) {
+            if(botMessagesIn.get(i).equals(msg)) {
+                botMessagesIn.remove(i);
+                return true;
+            }
+        }
+        return false;
+    }
 
     public MasterMind() {
-        super(600, 800, 60, 60);
+        super(600, 750, 60, 60);
 
         state = GameState.TITLE_SCREEN;
 
-        peg = new CodePeg(100, 100, 4);
+        // prevent game from being resized
+        Draw.frame.setResizable(false);
+        Draw.allowFullScreen = false;
 
         LoopManager.startLoops(this);
     }
@@ -50,9 +85,11 @@ public class MasterMind extends GameJava {
         }
         lastState = state;
 
+        Utils.putInDebugMenu("client messages", clientMessagesIn.toString());
+        Utils.putInDebugMenu("bot    messages", botMessagesIn.toString());
+
         switch (state) {
             case TITLE_SCREEN:
-            peg.update();
                 TitleScreen.handleTitleScreen(isNewState);
                 break;
             case PRACTICECONNECTING:
@@ -61,6 +98,7 @@ public class MasterMind extends GameJava {
             case CONNECTING:
                 break;
             case PLAYING:
+                Playing.handlePlaying(isNewState);
                 break;
             case RESULTS:
                 break;
@@ -72,7 +110,6 @@ public class MasterMind extends GameJava {
         switch (state) {
             case TITLE_SCREEN:
                 TitleScreen.drawTitleScreen();
-                peg.draw();
                 break;
             case PRACTICECONNECTING:
                 PracticeConnecting.drawPracticeConnecting();
@@ -80,6 +117,7 @@ public class MasterMind extends GameJava {
             case CONNECTING:
                 break;
             case PLAYING:
+                Playing.drawPlaying();
                 break;
             case RESULTS:
                 break;

@@ -106,10 +106,10 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
     // what happens when a client sends a message
     @Override
     public void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
+        System.out.println("["+ctx.channel().id().asShortText()+":SERVER]" + msg);
         if (msg.startsWith("[CHAT]")) {
             messageAllClient(ctx.channel().id().asShortText() + msg);
         } else {
-
             switch (serverState) {
                 case AcceptPlayers:
                     handleAcceptPlayers(ctx, msg);
@@ -184,11 +184,8 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
 
     // handles waiting for code state
     public void handleWaitForCode(ChannelHandlerContext ctx, String msg) {
-        System.out.println("got a guess");
         if (isMaker(ctx) && msg.charAt(0) == 'C') {
-            System.out.println("Char code is C");
             code = msg.substring(1);
-            System.out.println("code: " + code);
             if (verifyCode(code)) {
                 System.out.println("Code has been varified");
                 messageAllClient("[WC]CodeHasBeenSelected");

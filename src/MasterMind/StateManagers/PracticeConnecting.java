@@ -12,13 +12,19 @@ public class PracticeConnecting {
         if (isNewState) {
             // create local server
             ConnectionHandler.startServer();
-
+            MasterMind.clientReadyToJoin = true;
         }
 
-        // connect client to local server
-        ConnectionHandler.startClientIfNull("127.0.0.1");
+        // connect bot to local server
+        ConnectionHandler.startBotIfNull("127.0.0.1");
 
-        if (ConnectionHandler.serverReady && ConnectionHandler.clientConnected) {
+        // connect client to local server
+        if(ConnectionHandler.botConnected) {
+            ConnectionHandler.startClientIfNull("127.0.0.1");
+        }
+
+        if (ConnectionHandler.serverReady && ConnectionHandler.clientConnected && ConnectionHandler.botConnected) {
+            MasterMind.isPractice = true;
             MasterMind.state = MasterMind.GameState.PLAYING;
         }
     }

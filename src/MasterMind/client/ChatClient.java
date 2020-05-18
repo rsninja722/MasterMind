@@ -1,7 +1,7 @@
 package MasterMind.client;
-import java.util.Scanner;
 
 import MasterMind.ConnectionHandler;
+import MasterMind.MasterMind;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -54,15 +54,21 @@ public class ChatClient {
 			/*
 			 * Iterate & take chat message inputs from user & then send to server.
 			 */
-            ConnectionHandler.clientConnected = true;
-            Scanner scanner = new Scanner(System.in);
-			while (scanner.hasNext()) {
-				String input = scanner.nextLine();
-				Channel channel = f.sync().channel();
-				channel.writeAndFlush(input);
-				channel.flush();
+			while (MasterMind.gameRunning) {
+                if(ConnectionHandler.clientConnected == false && MasterMind.clientReadyToJoin) {
+                    if(MasterMind.clientReceivedMessage("[AP] Successfully Joined")) {
+                        ConnectionHandler.clientConnected = true;
+                        MasterMind.clientMessagesOut.add("[AP]ready");
+                    }
+                }
+				if(MasterMind.clientMessagesOut.size() > 0) {
+                    Channel channel = f.sync().channel();
+                    channel.writeAndFlush(MasterMind.clientMessagesOut.get(0));
+                    channel.flush();
+                    MasterMind.clientMessagesOut.remove(0);
+                }
+                Thread.sleep(1);
 			}
-            scanner.close();
 			
 		} catch (InterruptedException e) {
 			e.printStackTrace();
