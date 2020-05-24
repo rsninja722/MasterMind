@@ -59,7 +59,6 @@ public class BotClient {
                 if (ConnectionHandler.botConnected == false) {
                     if (MasterMind.botReceivedMessage("[AP] Successfully Joined")) {
                         ConnectionHandler.botConnected = true;
-                        MasterMind.botMessagesOut.add("[AP]ready");
                     }
                 }
 

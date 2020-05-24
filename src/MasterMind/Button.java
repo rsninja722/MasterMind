@@ -26,6 +26,8 @@ public class Button {
     Runnable callBack;
     // text to display
     String text;
+    // size of text
+    int textSize;
 
     boolean shouldPlaySound = true;
 
@@ -33,6 +35,15 @@ public class Button {
         this.rect = new Rect(x, y, w, h);
         this.callBack = callBack;
         this.text = text;
+        int size = 4;
+        Draw.setFontSize(size);
+        while(Draw.getWidthOfText(text) > w) {
+            Draw.setFontSize(--size);
+            if(size == 1) {
+                break;
+            }
+        }
+        this.textSize = size;
     }
 
     public void draw() {
@@ -68,11 +79,7 @@ public class Button {
 
         // text
         Draw.setColor(textColor);
-        if (this.text.length() < 8) {
-            Draw.setFontSize(4);
-        } else {
-            Draw.setFontSize(3);
-        }
+        Draw.setFontSize(this.textSize);
         Draw.text(this.text, (int) (10 + this.rect.x - this.rect.w / 2), (int) this.rect.y + 12 + contentOffset);
 
         // outline

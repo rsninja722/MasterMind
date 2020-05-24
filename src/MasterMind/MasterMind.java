@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import MasterMind.StateManagers.Playing;
 import MasterMind.StateManagers.PracticeConnecting;
+import MasterMind.StateManagers.SelectRounds;
 import MasterMind.StateManagers.TitleScreen;
 import game.*;
 import game.drawing.Draw;
@@ -21,7 +22,7 @@ big bright buttons
 public class MasterMind extends GameJava {
 
     public enum GameState {
-        TITLE_SCREEN, PRACTICECONNECTING, CONNECTING, PLAYING, RESULTS
+        TITLE_SCREEN, SELECTING_ROUNDS, PRACTICE_CONNECTING, CONNECTING, PLAYING, RESULTS
     }
 
     static public GameState state;
@@ -38,6 +39,8 @@ public class MasterMind extends GameJava {
 
     static public ArrayList<String> botMessagesIn = new ArrayList<String>();
     static public ArrayList<String> botMessagesOut = new ArrayList<String>();
+
+    static public int rounds = 1;
 
     static public boolean clientReceivedMessage(String msg) {
         for(int i=0;i<clientMessagesIn.size();i++) {
@@ -92,7 +95,10 @@ public class MasterMind extends GameJava {
             case TITLE_SCREEN:
                 TitleScreen.handleTitleScreen(isNewState);
                 break;
-            case PRACTICECONNECTING:
+            case SELECTING_ROUNDS:
+                SelectRounds.handleSelectRounds(isNewState);
+                break;
+            case PRACTICE_CONNECTING:
                 PracticeConnecting.handlePracticeConnecting(isNewState);
                 break;
             case CONNECTING:
@@ -111,7 +117,10 @@ public class MasterMind extends GameJava {
             case TITLE_SCREEN:
                 TitleScreen.drawTitleScreen();
                 break;
-            case PRACTICECONNECTING:
+            case SELECTING_ROUNDS:
+                SelectRounds.drawSelectRounds();
+                break;
+            case PRACTICE_CONNECTING:
                 PracticeConnecting.drawPracticeConnecting();
                 break;
             case CONNECTING:
@@ -129,7 +138,9 @@ public class MasterMind extends GameJava {
         switch (state) {
             case TITLE_SCREEN:
                 break;
-            case PRACTICECONNECTING:
+            case SELECTING_ROUNDS:
+                break;
+            case PRACTICE_CONNECTING:
                 break;
             case CONNECTING:
                 break;

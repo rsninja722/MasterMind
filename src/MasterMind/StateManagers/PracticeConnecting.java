@@ -24,8 +24,7 @@ public class PracticeConnecting {
         }
 
         if (ConnectionHandler.serverReady && ConnectionHandler.clientConnected && ConnectionHandler.botConnected) {
-            MasterMind.isPractice = true;
-            MasterMind.state = MasterMind.GameState.PLAYING;
+            MasterMind.state = MasterMind.GameState.SELECTING_ROUNDS;
         }
     }
 

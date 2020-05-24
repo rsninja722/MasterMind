@@ -20,7 +20,8 @@ public class TitleScreen {
 
     // button callbacks
     public static void practicePress() {
-        MasterMind.state = MasterMind.GameState.PRACTICECONNECTING;
+        MasterMind.isPractice = true;
+        MasterMind.state = MasterMind.GameState.PRACTICE_CONNECTING;
     }
 
     public static void playPress() {

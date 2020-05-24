@@ -11,14 +11,19 @@ public class ChatClientHandler extends SimpleChannelInboundHandler<String> {
 	 */
 	@Override
 	protected void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
-        System.out.println("[CLIENT]" + msg);
         // if messages get squished together, separate them
-        if(msg.lastIndexOf("[") > 1) {
-            MasterMind.clientMessagesIn.add(msg.substring(0, msg.lastIndexOf("[")));
-            MasterMind.clientMessagesIn.add(msg.substring(msg.lastIndexOf("[")));
-        } else {
-            MasterMind.clientMessagesIn.add(msg);
+        while(msg.lastIndexOf("[") > 1) {
+            for(int i=2;i<msg.length();i++) {
+                if(msg.charAt(i) == '[') {
+                    System.out.println("[CLIENT]" + msg.substring(0, i));
+                    MasterMind.clientMessagesIn.add(msg.substring(0, i));
+                    msg = msg.substring(i);
+                    i=2;
+                }
+            }
         }
+        System.out.println("[CLIENT]" + msg);
+        MasterMind.clientMessagesIn.add(msg);
 	}
  
 }

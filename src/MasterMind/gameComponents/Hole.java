@@ -26,14 +26,13 @@ public class Hole {
     public static void generateHoles() {
         for (int y = 0; y < codeHoles.length; y++) {
             for (int x = 0; x < codeHoles[y].length; x++) {
-                codeHoles[y][x] = new Hole(200 + x * 60, 60 + y * 60, Hole.HoleType.CODE);
+                codeHoles[y][x] = new Hole(200 + x * 60, 160 + y * 50, Hole.HoleType.CODE);
             }
         }
 
         for (int y = 0; y < hintHoles.length; y++) {
             for (int x = 0; x < hintHoles[y].length; x++) {
-                hintHoles[y][x] = new Hole(50 + (x % 2) * 60,
-                        40 + (x>1 ? 1 : 0)  * 25 + y * 60, Hole.HoleType.HINT);
+                hintHoles[y][x] = new Hole(50 + (x % 2) * 60, 140 + (x>1 ? 1 : 0)  * 25 + y * 50, Hole.HoleType.HINT);
             }
         }
     }
@@ -72,7 +71,7 @@ public class Hole {
     // returns true if mouse is hovering over a hole's peg position
     public boolean mouseHovering() {
         if (this.type == HoleType.CODE) {
-            if (Physics.rectpoint(new Rect(this.position.x, this.position.y - 30, 55, 50), Input.mousePos)) {
+            if (Physics.rectpoint(new Rect(this.position.x, this.position.y - 20, 55, 40), Input.mousePos)) {
                 return true;
             }
         } else {

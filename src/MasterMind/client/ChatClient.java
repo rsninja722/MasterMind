@@ -58,7 +58,6 @@ public class ChatClient {
                 if(ConnectionHandler.clientConnected == false && MasterMind.clientReadyToJoin) {
                     if(MasterMind.clientReceivedMessage("[AP] Successfully Joined")) {
                         ConnectionHandler.clientConnected = true;
-                        MasterMind.clientMessagesOut.add("[AP]ready");
                     }
                 }
 				if(MasterMind.clientMessagesOut.size() > 0) {

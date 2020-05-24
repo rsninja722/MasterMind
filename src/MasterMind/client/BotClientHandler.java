@@ -11,14 +11,19 @@ public class BotClientHandler extends SimpleChannelInboundHandler<String> {
 	 */
 	@Override
 	protected void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
-        System.out.println("[BOT]" + msg);
+        
         // if messages get squished together, separate them
-        if(msg.lastIndexOf("[") > 1) {
-            MasterMind.botMessagesIn.add(msg.substring(0, msg.lastIndexOf("[")));
-            MasterMind.botMessagesIn.add(msg.substring(msg.lastIndexOf("[")));
-        } else {
-            MasterMind.botMessagesIn.add(msg);
+        while(msg.lastIndexOf("[") > 1) {
+            for(int i=2;i<msg.length();i++) {
+                if(msg.charAt(i) == '[') {
+                    System.out.println("[BOT]" + msg.substring(0, i));
+                    MasterMind.botMessagesIn.add(msg.substring(0, i));
+                    msg = msg.substring(i);
+                }
+            }
         }
+        System.out.println("[BOT]" + msg);
+        MasterMind.botMessagesIn.add(msg);
 	}
  
 }
