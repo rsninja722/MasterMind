@@ -48,7 +48,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
 
     static int round = 0;
 
-    static int desiredRounds;
+    static int desiredRounds = 2;
 
     // server states [prefix for messages sent in each state]
     enum ServerState {
@@ -100,7 +100,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
         System.out.println("Client joined - " + ctx);
         playerCount++;
         channels.add(ctx.channel());
-        ctx.writeAndFlush("[AP] Successfully Joined");
+        ctx.writeAndFlush(",[AP] Successfully Joined");
     }
 
     // what happens when a client sends a message
@@ -108,7 +108,9 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
     public void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
         System.out.println("["+ctx.channel().id().asShortText()+":SERVER]" + msg);
         if (msg.startsWith("[CHAT]")) {
-            messageAllClient(ctx.channel().id().asShortText() + msg);
+            messageAllClient(","+ctx.channel().id().asShortText() + msg);
+        } else if (msg.startsWith("[GenHint]")) {
+            ctx.writeAndFlush(",hint"+(generateHint(msg.substring(9)).substring(1)));
         } else {
             switch (serverState) {
                 case AcceptPlayers:
@@ -156,28 +158,28 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
 
         if (msg.contains("[AP]rounds")) {
             desiredRounds = Integer.parseInt(msg.substring(10)) * 2;
-            messageAllClient("[AP]RoundsSetTo" + (desiredRounds / 2));
+            messageAllClient(",[AP]RoundsSetTo" + (desiredRounds / 2));
         }
 
         // checks if player zero is ready to play
         if (msg.equals("[AP]ready") && isPlayerZero(ctx)) {
             readyPlayerZero = true;
-            messageAllClient("[AP]Player Zero Ready");
+            messageAllClient(",[AP]Player Zero Ready");
         }
 
         // checks if player one is ready to play
         if (msg.equals("[AP]ready") && !isPlayerZero(ctx)) {
             readyPlayerOne = true;
-            messageAllClient("[AP]Player One Ready");
+            messageAllClient(",[AP]Player One Ready");
         }
 
         // if both players are ready start the game.
         if (readyPlayerOne && readyPlayerZero) {
             serverState = ServerState.WaitForCode;
             swapPlayers();
-            messageAllClient("[AP]Game Starting");
-            messageCodeMaker("[WC]SendCodePlease");
-            messageCodeBreaker("[WC]YouAreCodeBreaker");
+            messageAllClient(",[AP]Game Starting");
+            messageCodeMaker(",[WC]SendCodePlease");
+            messageCodeBreaker(",[WC]YouAreCodeBreaker");
         }
 
     }
@@ -186,10 +188,11 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
     public void handleWaitForCode(ChannelHandlerContext ctx, String msg) {
         if (isMaker(ctx) && msg.charAt(0) == 'C') {
             code = msg.substring(1);
+            System.out.println(code);
             if (verifyCode(code)) {
                 System.out.println("Code has been varified");
-                messageAllClient("[WC]CodeHasBeenSelected");
-                messageCodeBreaker("[WC]SendGuessPlease");
+                messageAllClient(",[WC]CodeHasBeenSelected");
+                messageCodeBreaker(",[WC]SendGuessPlease");
                 serverState = ServerState.WaitForGuess;
             }
         }
@@ -219,16 +222,16 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
         if (!isMaker(ctx) && msg.charAt(0) == 'C') {
             codeGuess = msg.substring(1);
             if (verifyCode(codeGuess)) {
-                messageAllClient("[WG]GuessReceived");
-                messageCodeMaker("C" + codeGuess);
-                messageCodeMaker("[WG]SendAcknowledgementPlease");
+                messageAllClient(",[WG]GuessReceived");
+                messageCodeMaker(",C" + codeGuess);
+                messageCodeMaker(",[WG]SendAcknowledgementPlease");
                 serverState = ServerState.WaitForAcknowledgement;
             }
         }
     }
 
     // hint is 4 character long code consisting of 0s, 1s, and 2s
-    public String generateHint(String guess) {
+    public static String generateHint(String guess) {
         StringBuilder returnStr = new StringBuilder("H");
 
         ArrayList<Integer> correctGuesses = new ArrayList<Integer>();
@@ -267,29 +270,29 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
     public void handleWaitForAcknowledgement(ChannelHandlerContext ctx, String msg) {
         if (isMaker(ctx) && msg.equals("[WA]acknowledgement")) {
             hint = generateHint(codeGuess);
-            messageAllClient(hint);
-            messageAllClient("[WA]WaitingForGuess");
-            messageCodeBreaker("[WA]SendGuessPlease");
+            messageAllClient(","+hint);
+            messageAllClient(",[WA]WaitingForGuess");
+            messageCodeBreaker(",[WA]SendGuessPlease");
             if (codeBreaker == 0) {
                 playerZeroGuessCount++;
             } else {
                 playerOneGuessCount++;
             }
             if (hint.equals("H2222")) {
-                messageAllClient("[WA]BreakerWins");
+                messageAllClient(",[WA]BreakerWins");
                 roundDone();
                 return;
             }
 
             if (codeBreaker == 0) {
                 if (playerZeroGuessCount == 10) {
-                    messageAllClient("[WA]MakerWins");
+                    messageAllClient(",[WA]MakerWins");
                     roundDone();
                     return;
                 }
             } else {
                 if (playerOneGuessCount == 10) {
-                    messageAllClient("[WA]MakerWins");
+                    messageAllClient(",[WA]MakerWins");
                     roundDone();
                     return;
                 }
@@ -304,18 +307,21 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
         playerOneGuessCountTotal += playerOneGuessCount;
         playerZeroGuessCount = 0;
         playerOneGuessCount = 0;
+        hint = null;
+        code = null;
+        codeGuess = null;
         round++;
 
         if (round == desiredRounds) {
             if (playerOneGuessCountTotal < playerZeroGuessCountTotal) {
-                channels.get(1).writeAndFlush("YouWin");
-                channels.get(0).writeAndFlush("YouLose");
+                channels.get(1).writeAndFlush(",YouWin");
+                channels.get(0).writeAndFlush(",YouLose");
             } else {
-                channels.get(1).writeAndFlush("YouLose");
-                channels.get(0).writeAndFlush("YouWin");
+                channels.get(1).writeAndFlush(",YouLose");
+                channels.get(0).writeAndFlush(",YouWin");
             }
 
-            messageAllClient("[NR]GameOver");
+            messageAllClient(",[NR]GameOver");
             for (Channel c : channels) {
 
                 c.disconnect();
@@ -326,7 +332,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
             readyPlayerOne = false;
             readyPlayerZero = false;
             swapPlayers();
-            messageAllClient("[NR]sendReadyPlease");
+            messageAllClient(",[NR]sendReadyPlease");
         }
     }
 
@@ -335,7 +341,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
         // checks if player zero is ready to play
         if (msg.equals("[NR]ready") && isPlayerZero(ctx)) {
             readyPlayerZero = true;
-            messageAllClient("[NR]Player Zero Ready");
+            messageAllClient(",[NR]Player Zero Ready");
         }
 
         // checks if player one is ready to play
@@ -347,9 +353,9 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
         // if both players are ready start the game.
         if (readyPlayerOne && readyPlayerZero) {
             serverState = ServerState.WaitForCode;
-            messageAllClient("[NR]Game Starting");
-            messageCodeMaker("[WC]SendCodePlease");
-            messageCodeBreaker("[WC]YouAreCodeBreaker");
+            messageAllClient(",[NR]Game Starting");
+            messageCodeMaker(",[WC]SendCodePlease");
+            messageCodeBreaker(",[WC]YouAreCodeBreaker");
         }
     }
 

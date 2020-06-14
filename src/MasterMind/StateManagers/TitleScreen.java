@@ -1,7 +1,10 @@
 package MasterMind.StateManagers;
 
+import java.awt.Color;
+
 import MasterMind.Button;
 import MasterMind.MasterMind;
+import game.drawing.Draw;
 
 public class TitleScreen {
 
@@ -14,6 +17,9 @@ public class TitleScreen {
     }
 
     public static void drawTitleScreen() {
+        // background
+        Draw.setColor(new Color(26, 26, 26));
+        Draw.rect(0, 0, 2000, 2000);
         practiceButton.draw();
         playButton.draw();
     }

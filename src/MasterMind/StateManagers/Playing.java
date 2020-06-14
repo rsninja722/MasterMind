@@ -8,6 +8,7 @@ import MasterMind.MasterMind;
 import MasterMind.gameComponents.Hole;
 import MasterMind.gameComponents.Peg;
 import MasterMind.gameComponents.Hole.HoleType;
+import MasterMind.server.ServerHandler;
 import game.Input;
 import game.Utils;
 import game.drawing.Draw;
@@ -19,14 +20,29 @@ public class Playing {
 
     static ArrayList<Peg> pegs = new ArrayList<Peg>();
 
+    static ArrayList<String> popUps = new ArrayList<String>();
+    static int popUpTime = 0;
+
     static boolean waiting = true;
 
-    static int turn = 1;
+    static boolean makeCode = false;
 
-    static boolean isBreaker = false;
+    static int turn = 0;
+
+    static boolean isBreaker = true;
+
+    static int botGuessAmount;
+    static int botGuesses;
 
     static boolean showConfirm = false;
     static Button confirmButton = new Button(500, 325, 150, 50, "Confirm", Playing::confirm);
+
+    static int playerGuesses = 0;
+    static int opponentGuesses = 0;
+
+    static String pegsToShow = "";
+
+    static Boolean acknowledge = false;
 
     public static void handlePlaying(boolean isNewState) {
 
@@ -45,45 +61,210 @@ public class Playing {
             }
         }
 
+        if (MasterMind.isPractice) {
+            // start new round
+            if (MasterMind.clientReceivedMessage("[NR]sendReadyPlease")) {
+                MasterMind.clientMessagesOut.add("[NR]ready");
+                Hole.clear();
+            }
+            if (MasterMind.botReceivedMessage("[NR]sendReadyPlease")) {
+                MasterMind.botMessagesOut.add("[NR]ready");
+            }
+
+            // make client send a set code
+            if (MasterMind.clientReceivedMessage("[WC]SendCodePlease")) {
+                MasterMind.clientMessagesOut.add("C1111");
+                botGuessAmount = Utils.rand(5, 9);
+                turn = 0;
+            }
+
+            // make bot make code
+            if (MasterMind.botReceivedMessage("[WC]SendCodePlease")) {
+                MasterMind.botMessagesOut.add("C" + Utils.rand(1, 6) + Utils.rand(1, 6) + Utils.rand(1, 6) + Utils.rand(1, 6));
+            }
+            if (MasterMind.botReceivedMessage("[WG]SendAcknowledgementPlease")) {
+                MasterMind.botMessagesOut.add("[WA]acknowledgement");
+            }
+
+            // make bot guess
+            if (MasterMind.botReceivedMessage("[WA]SendGuessPlease") || MasterMind.botReceivedMessage("[WC]SendGuessPlease")) {
+                if (botGuesses < botGuessAmount) {
+                    ++opponentGuesses;
+                    ++turn;
+                    ++botGuesses;
+                    String code = "C" + Utils.rand(2, 6) + Utils.rand(1, 6) + Utils.rand(1, 6) + Utils.rand(1, 6);
+                    MasterMind.botMessagesOut.add(code);
+
+                    for (int j = 1; j < 5; j++) {
+                        Hole.codeHoles[10 - turn][j - 1].pegColor = Integer.parseInt(code.substring(j, j + 1));
+                    }
+                } else {
+                    ++opponentGuesses;
+                    ++turn;
+                    MasterMind.botMessagesOut.add("C1111");
+                    for (int j = 1; j < 5; j++) {
+                        Hole.codeHoles[10 - turn][j - 1].pegColor = 1;
+                    }
+                    botGuesses = 0;
+                    MasterMind.updateDelay = 100;
+                    turn = 0;
+                    return;
+                }
+            }
+
+            // make client send acknowledgement
+            if (MasterMind.clientReceivedMessage("[WG]SendAcknowledgementPlease")) {
+                MasterMind.clientMessagesOut.add("[WA]acknowledgement");
+            }
+        } else {
+            // start new round
+            if (MasterMind.clientReceivedMessage("[NR]sendReadyPlease")) {
+                MasterMind.clientMessagesOut.add("[NR]ready");
+                Hole.clear();
+                waiting = true;
+                pegsToShow = "";
+            }
+            
+            if (!isBreaker) {
+                // receive codes
+                for (int i = 0; i < MasterMind.clientMessagesIn.size(); i++) {
+                    if (MasterMind.clientMessagesIn.get(i).startsWith("hint")) {
+                        String hint = MasterMind.clientMessagesIn.get(i).substring(4);
+                        MasterMind.clientMessagesIn.remove(i);
+                        popUps.add("Enter Hint");
+                        acknowledge = true;
+                        waiting = false;
+                        for(int j=0;j<4;j++) {
+                            if(hint.charAt(j) != '0') {
+                                Hole.hintHoles[10-turn][j].pegColor = Integer.parseInt(hint.charAt(j)+"");
+                                Hole.hintHoles[10-turn][j].ghost = true;
+                            }
+                        }
+                        i--;
+                        continue;
+                    }
+                    if (MasterMind.clientMessagesIn.get(i).charAt(0) == 'C') {
+                        String code = MasterMind.clientMessagesIn.get(i);
+                        MasterMind.clientMessagesIn.remove(i);
+
+                        MasterMind.clientMessagesOut.add("[GenHint]"+code.substring(1));
+                        
+                        for (int j = 1; j < 5; j++) {
+                            int pegColor = Integer.parseInt(code.substring(j, j + 1));
+                            if (pegColor != 0) {
+                                Hole.codeHoles[9 - turn][j - 1].pegColor = pegColor;
+                            }
+                        }
+
+                        ++turn;
+                        ++opponentGuesses;
+                        i--;
+                        continue;
+                    }
+                }
+
+                // acknowledgement
+                if(turn > 0 && acknowledge) {
+                    boolean ready = true;
+                    for(int i=0;i<4;i++) {
+                        if(Hole.hintHoles[10 - turn][i].ghost) {
+                            ready = false;
+                            break;
+                        }
+                    }
+                    if(ready) {
+                        MasterMind.clientMessagesOut.add("[WA]acknowledgement");
+                        acknowledge = false;
+                        waiting = true;
+                    }
+                }
+
+            }
+
+            if(!isBreaker) {
+                if(!waiting && turn == 0) {
+
+                }
+            }
+        }
+
+        // round start
+        if (MasterMind.clientReceivedMessage("[NR]Game Starting")) {
+            Hole.clear();
+        }
+
         // determine what the client is
         if (MasterMind.clientReceivedMessage("[WC]YouAreCodeBreaker")) {
             isBreaker = true;
-            waiting = false;
+            waiting = true;
+            turn = 0;
         }
         if (MasterMind.clientReceivedMessage("[WC]SendCodePlease")) {
+            popUps.add("Enter Code");
+            makeCode = true;
             isBreaker = false;
             waiting = false;
+            turn = 0;
         }
 
-        // when ready to send guess
+        // enter guess
+        if (MasterMind.clientReceivedMessage("[WC]SendGuessPlease")) {
+            popUps.add("Enter Guess");
+            waiting = false;
+        }
         if (MasterMind.clientReceivedMessage("[WA]WaitingForGuess")) {
+            popUps.add("Enter Guess");
             waiting = false;
         }
 
-        // when ready to send guess
-        for (int i = 0; i < MasterMind.clientMessagesIn.size(); i++) {
-            if (MasterMind.clientMessagesIn.get(i).charAt(0) == 'H') {
-                String hint = MasterMind.clientMessagesIn.get(i);
-                MasterMind.clientMessagesIn.remove(i);
+        // receive hints
+        if (turn > 0) {
+            for (int i = 0; i < MasterMind.clientMessagesIn.size(); i++) {
+                if (MasterMind.clientMessagesIn.get(i).charAt(0) == 'H') {
+                    String hint = MasterMind.clientMessagesIn.get(i);
+                    MasterMind.clientMessagesIn.remove(i);
+                    // if(isBreaker) {
+                    waiting = false;
+                    popUps.add("Enter Code");
 
-                for (int j = 1; j < 5; j++) {
-                    int pegColor = Integer.parseInt(hint.substring(j, j + 1));
-                    if (pegColor != 0) {
-                        Hole.hintHoles[10 - turn][j - 1].pegColor = pegColor;
+                    for (int j = 1; j < 5; j++) {
+                        int pegColor = Integer.parseInt(hint.substring(j, j + 1));
+                        if (pegColor != 0) {
+                            Hole.hintHoles[10 - turn][j - 1].pegColor = pegColor;
+                        }
                     }
                 }
             }
         }
 
-        // make bot make code
-        if (MasterMind.isPractice) {
-            if (MasterMind.botReceivedMessage("[WC]SendCodePlease")) {
-                MasterMind.botMessagesOut
-                        .add("C" + Utils.rand(1, 6) + Utils.rand(1, 6) + Utils.rand(1, 6) + Utils.rand(1, 6));
-            }
-            if (MasterMind.botReceivedMessage("[WG]SendAcknowledgementPlease")) {
-                MasterMind.botMessagesOut.add("[WA]acknowledgement");
-            }
+        // round done
+        if (MasterMind.clientReceivedMessage("[WA]BreakerWins")) {
+            popUps.add("Breaker Wins");
+            MasterMind.updateDelay = 100;
+            turn = 0;
+            waiting = true;
+            isBreaker = !isBreaker;
+            return;
+        }
+        if (MasterMind.clientReceivedMessage("[WA]MakerWins")) {
+            popUps.add("Maker Wins");
+            MasterMind.updateDelay = 100;
+            turn = 0;
+            waiting = true;
+            isBreaker = !isBreaker;
+            return;
+        }
+
+        // game done
+        if (MasterMind.clientReceivedMessage("YouWin")) {
+            MasterMind.won = true;
+            MasterMind.state = MasterMind.GameState.RESULTS;
+            return;
+        }
+        if (MasterMind.clientReceivedMessage("YouLose")) {
+            MasterMind.won = false;
+            MasterMind.state = MasterMind.GameState.RESULTS;
+            return;
         }
 
         if (Input.mouseClick(0)) {
@@ -127,12 +308,11 @@ public class Playing {
                     for (int x = 0; x < Hole.hintHoles[y].length; x++) {
                         Hole h = Hole.hintHoles[y][x];
                         // if there is a peg
-                        if (h.pegColor != -1) {
+                        if (h.pegColor != -1 && !h.ghost)  {
                             // if mouse is over a hole
                             if (h.mouseHovering()) {
                                 // make a peg at the hole
-                                pegs.add(new Peg(h.position.x, h.position.y - 10, h.pegColor,
-                                        h.type == HoleType.CODE ? Peg.PegType.CODE : Peg.PegType.HINT));
+                                pegs.add(new Peg(h.position.x, h.position.y - 10, h.pegColor, h.type == HoleType.CODE ? Peg.PegType.CODE : Peg.PegType.HINT));
                                 pegs.get(pegs.size() - 1).grabbed = true;
                                 Peg.globalGrabbed = true;
                                 // remove peg
@@ -151,7 +331,7 @@ public class Playing {
             }
         }
 
-        if (isBreaker && !waiting && turn < 10) {
+        if ((MasterMind.isPractice ? (isBreaker) : (isBreaker ? true : makeCode)) && !waiting && turn < 10) {
             for (int i = 0; i < 4; i++) {
                 if (Hole.codeHoles[9 - turn][i].pegColor == -1) {
                     showConfirm = false;
@@ -160,6 +340,8 @@ public class Playing {
                     showConfirm = true;
                 }
             }
+        } else {
+            showConfirm = false;
         }
 
         // confirm button
@@ -176,6 +358,18 @@ public class Playing {
             }
             MasterMind.clientMessagesOut.add(code);
             ++turn;
+            ++playerGuesses;
+            waiting = true;
+        } else {
+            String code = "C";
+            pegsToShow = "";
+            for (int i = 0; i < 4; i++) {
+                code += Hole.codeHoles[9][i].pegColor;
+                pegsToShow += Hole.codeHoles[9][i].pegColor;
+            }
+            MasterMind.clientMessagesOut.add(code);
+            Hole.clear();
+            makeCode = false;
             waiting = true;
         }
     }
@@ -217,11 +411,34 @@ public class Playing {
             confirmButton.draw();
         }
 
+        Draw.setColor(Color.WHITE);
+        Draw.setFontSize(2);
+        Draw.text("your guesses: " + playerGuesses, 80, 30);
+        Draw.text("opponent guesses: " + opponentGuesses, 30, 60);
+
+        Draw.text((isBreaker ? "code breaker" : "code maker"), 400, 700);
+
+        if(!pegsToShow.equals("")) {
+            for(int i=0;i<4;i++) {
+                Draw.image("codePeg"+pegsToShow.charAt(i), 400 + i*16, 50, 0, 2);
+            }
+        }
+
         if (waiting) {
-            Draw.setColor(Color.WHITE);
             Draw.setFontSize(5);
-            Draw.text("Waiting...", 300, 400);
+            Draw.text("Waiting...", 200, 400);
+        }
+
+        // handle pop ups
+        if (popUps.size() > 0) {
+            Draw.setFontSize(3);
+            Draw.text(popUps.get(0), 300, 30);
+
+            ++popUpTime;
+            if (popUpTime >= 150) {
+                popUpTime = 0;
+                popUps.remove(0);
+            }
         }
     }
-
 }

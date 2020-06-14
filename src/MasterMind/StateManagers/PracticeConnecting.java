@@ -11,7 +11,7 @@ public class PracticeConnecting {
     public static void handlePracticeConnecting(boolean isNewState) {
         if (isNewState) {
             // create local server
-            ConnectionHandler.startServer();
+            ConnectionHandler.startServerIfNull();
             MasterMind.clientReadyToJoin = true;
         }
 
@@ -29,13 +29,16 @@ public class PracticeConnecting {
     }
 
     public static void drawPracticeConnecting() {
+        // background
+        Draw.setColor(new Color(26, 26, 26));
+        Draw.rect(0, 0, 2000, 2000);
         if (!ConnectionHandler.serverReady) {
-            Draw.setColor(Color.BLACK);
+            Draw.setColor(Color.WHITE);
             Draw.setFontSize(2);
             Draw.text("starting server...", 200, 400);
         } else {
             if (!ConnectionHandler.clientConnected) {
-                Draw.setColor(Color.BLACK);
+                Draw.setColor(Color.WHITE);
                 Draw.setFontSize(2);
                 Draw.text("connecting to server...", 100, 400);
             }

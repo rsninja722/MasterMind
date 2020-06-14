@@ -18,6 +18,8 @@ public class Hole {
     public Point position;
     public HoleType type;
 
+    public boolean ghost = false;
+
     public int pegColor = -1; // -1 means no peg assigned
 
     public static Hole[][] codeHoles = new Hole[10][4];
@@ -58,9 +60,13 @@ public class Hole {
         } else {
             Draw.image("hintHoleBack", (int) this.position.x, (int) this.position.y - 15, 0, 5);
             if (this.pegColor != -1) {
-                Draw.image("hintPeg" + this.pegColor + "Top", (int) this.position.x, (int) this.position.y - 15, 0, 5);
-                if (mouseHovering()) {
-                    Draw.image("hintPegHoverTop", (int) this.position.x, (int) this.position.y - 15, 0, 5);
+                if(ghost) {
+                    Draw.image("hintPeg" + this.pegColor + "TopGhost", (int) this.position.x, (int) this.position.y - 15, 0, 5);
+                } else {
+                    Draw.image("hintPeg" + this.pegColor + "Top", (int) this.position.x, (int) this.position.y - 15, 0, 5);
+                    if (mouseHovering()) {
+                        Draw.image("hintPegHoverTop", (int) this.position.x, (int) this.position.y - 15, 0, 5);
+                    }
                 }
             }
             Draw.image("hintHoleFront", (int) this.position.x, (int) this.position.y - 15, 0, 5);
@@ -80,6 +86,21 @@ public class Hole {
             }
         }
         return false;
+    }
+
+    public static void clear() {
+        for (int y = 0; y < codeHoles.length; y++) {
+            for (int x = 0; x < codeHoles[y].length; x++) {
+                codeHoles[y][x].pegColor = -1;
+            }
+        }
+
+        for (int y = 0; y < hintHoles.length; y++) {
+            for (int x = 0; x < hintHoles[y].length; x++) {
+                hintHoles[y][x].pegColor = -1;
+                hintHoles[y][x].ghost = false;
+            }
+        }
     }
 
     public static void drawHoles() {

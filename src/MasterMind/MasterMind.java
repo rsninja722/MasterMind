@@ -2,12 +2,15 @@ package MasterMind;
 
 import java.util.ArrayList;
 
+import MasterMind.StateManagers.Connecting;
 import MasterMind.StateManagers.Playing;
 import MasterMind.StateManagers.PracticeConnecting;
+import MasterMind.StateManagers.Results;
 import MasterMind.StateManagers.SelectRounds;
 import MasterMind.StateManagers.TitleScreen;
 import game.*;
 import game.drawing.Draw;
+import io.netty.handler.codec.http.HttpContentEncoder.Result;
 
 /*
 non essentials that would be nice to have:
@@ -41,6 +44,10 @@ public class MasterMind extends GameJava {
     static public ArrayList<String> botMessagesOut = new ArrayList<String>();
 
     static public int rounds = 1;
+
+    static public int updateDelay = 0;
+
+    static public boolean won;
 
     static public boolean clientReceivedMessage(String msg) {
         for(int i=0;i<clientMessagesIn.size();i++) {
@@ -81,33 +88,39 @@ public class MasterMind extends GameJava {
 
     @Override
     public void update() {
-        // determine if new state
-        boolean isNewState = false;
-        if (state != lastState) {
-            isNewState = true;
-        }
-        lastState = state;
+        if(updateDelay == 0) {
+            // determine if new state
+            boolean isNewState = false;
+            if (state != lastState) {
+                isNewState = true;
+            }
+            lastState = state;
 
-        Utils.putInDebugMenu("client messages", clientMessagesIn.toString());
-        Utils.putInDebugMenu("bot    messages", botMessagesIn.toString());
+            Utils.putInDebugMenu("client messages", clientMessagesIn.toString());
+            Utils.putInDebugMenu("bot    messages", botMessagesIn.toString());
 
-        switch (state) {
-            case TITLE_SCREEN:
-                TitleScreen.handleTitleScreen(isNewState);
-                break;
-            case SELECTING_ROUNDS:
-                SelectRounds.handleSelectRounds(isNewState);
-                break;
-            case PRACTICE_CONNECTING:
-                PracticeConnecting.handlePracticeConnecting(isNewState);
-                break;
-            case CONNECTING:
-                break;
-            case PLAYING:
-                Playing.handlePlaying(isNewState);
-                break;
-            case RESULTS:
-                break;
+            switch (state) {
+                case TITLE_SCREEN:
+                    TitleScreen.handleTitleScreen(isNewState);
+                    break;
+                case SELECTING_ROUNDS:
+                    SelectRounds.handleSelectRounds(isNewState);
+                    break;
+                case PRACTICE_CONNECTING:
+                    PracticeConnecting.handlePracticeConnecting(isNewState);
+                    break;
+                case CONNECTING:
+                    Connecting.handleConnecting(isNewState);
+                    break;
+                case PLAYING:
+                    Playing.handlePlaying(isNewState);
+                    break;
+                case RESULTS:
+                    Results.handleResults(isNewState);
+                    break;
+            }
+        } else {
+            updateDelay--;
         }
     }
 
@@ -124,11 +137,13 @@ public class MasterMind extends GameJava {
                 PracticeConnecting.drawPracticeConnecting();
                 break;
             case CONNECTING:
+                Connecting.drawConnecting();
                 break;
             case PLAYING:
                 Playing.drawPlaying();
                 break;
             case RESULTS:
+                Results.drawResults();
                 break;
         }
     }

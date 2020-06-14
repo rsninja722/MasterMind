@@ -110,6 +110,7 @@ public class Peg {
             if (nearest != null) {
                 nearest.pegColor = this.color;
                 nearest.type = this.type == PegType.CODE ? Hole.HoleType.CODE : Hole.HoleType.HINT;
+                nearest.ghost = false;
                 return true;
             }
 
@@ -152,7 +153,7 @@ public class Peg {
             for (int y = 0; y < Hole.hintHoles.length; y++) {
                 for (int x = 0; x < Hole.hintHoles[y].length; x++) {
                     // if hole is not occupied
-                    if (Hole.hintHoles[y][x].pegColor == -1) {
+                    if (Hole.hintHoles[y][x].pegColor == -1 || Hole.hintHoles[y][x].ghost) {
                         // if hole is close enough
                         if (Physics.dist(Hole.hintHoles[y][x].position, p) < Hole.snapDist) {
                             return Hole.hintHoles[y][x];

@@ -23,9 +23,11 @@ public class ConnectionHandler {
     public static boolean botAttemptingToConnect = false;
     public static boolean botConnected = false;
 
-    public static void startServer() {
-        serverThread = new ServerThread("server");
-        serverThread.start();
+    public static void startServerIfNull() {
+        if(serverThread == null) {
+            serverThread = new ServerThread("server");
+            serverThread.start();
+        }
     }
 
     private static class ServerThread implements Runnable {
