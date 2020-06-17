@@ -231,7 +231,11 @@ public class Playing {
         // determine what the client is
         if (MasterMind.clientReceivedMessage("[WC]YouAreCodeBreaker")) {
             isBreaker = true;
-            waiting = true;
+            if(MasterMind.isPractice) {
+            	waiting = false;
+            } else {
+            	waiting = true;
+            }
             turn = 0;
         }
         if (MasterMind.clientReceivedMessage("[WC]SendCodePlease")) {
@@ -243,8 +247,7 @@ public class Playing {
         }
 
         // enter guess
-        if (MasterMind.clientReceivedMessage("[WC]SendGuessPlease")
-                || MasterMind.clientReceivedMessage("[WA]SendGuessPlease")) {
+        if (MasterMind.clientReceivedMessage("[WC]SendGuessPlease") || MasterMind.clientReceivedMessage("[WA]SendGuessPlease")) {
             popUps.add("Enter Guess");
             waiting = false;
         }
