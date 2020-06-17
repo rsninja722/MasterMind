@@ -1,16 +1,23 @@
 package MasterMind.StateManagers;
 
+/*
+    this is mostly spaghetti code, it is easier to see how the game progresses in serverHandler
+*/
+
 import java.awt.Color;
 import java.util.ArrayList;
+
+import javax.swing.JOptionPane;
 
 import MasterMind.Button;
 import MasterMind.MasterMind;
 import MasterMind.gameComponents.Hole;
+import MasterMind.gameComponents.Particle;
 import MasterMind.gameComponents.Peg;
 import MasterMind.gameComponents.Hole.HoleType;
-import MasterMind.server.ServerHandler;
 import game.Input;
 import game.Utils;
+import game.audio.Sounds;
 import game.drawing.Draw;
 
 public class Playing {
@@ -44,6 +51,16 @@ public class Playing {
 
     static Boolean acknowledge = false;
 
+    static Button chatButton = new Button(750, 675, 200, 50, "send message", Playing::chat);
+    static String chatMessage = "";
+
+    static ArrayList<String> chatHistory = new ArrayList<String>();
+    static int chatScroll = 0;
+
+    static void chat() {
+        chatMessage = JOptionPane.showInputDialog("Enter message");
+    }
+
     public static void handlePlaying(boolean isNewState) {
 
         if (isNewState) {
@@ -58,6 +75,22 @@ public class Playing {
             // generate hint pegs
             for (int i = 0; i < 2; i++) {
                 hintPegs[i] = new Peg(30 + (i * 30), 650, i + 1, Peg.PegType.HINT);
+            }
+
+            chatHistory.add("Welcome to Master Mind!");
+            chatHistory.add("Use chat by using the send message button below");
+        }
+
+        // chat
+        if (!chatMessage.equals("")) {
+            MasterMind.clientMessagesOut.add("[CHAT]" + chatMessage);
+            chatMessage = "";
+        }
+        for (int i = 0; i < MasterMind.clientMessagesIn.size(); i++) {
+            if (MasterMind.clientMessagesIn.get(i).startsWith("[CHAT]")) {
+                chatHistory.add(MasterMind.clientMessagesIn.get(i).substring(6));
+                chatScroll += 10;
+                MasterMind.clientMessagesIn.remove(i);
             }
         }
 
@@ -124,35 +157,37 @@ public class Playing {
                 waiting = true;
                 pegsToShow = "";
             }
-            
+
             if (!isBreaker) {
                 // receive codes
                 for (int i = 0; i < MasterMind.clientMessagesIn.size(); i++) {
                     if (MasterMind.clientMessagesIn.get(i).startsWith("hint")) {
                         String hint = MasterMind.clientMessagesIn.get(i).substring(4);
                         MasterMind.clientMessagesIn.remove(i);
-                        popUps.add("Enter Hint");
                         acknowledge = true;
                         waiting = false;
-                        for(int j=0;j<4;j++) {
-                            if(hint.charAt(j) != '0') {
-                                Hole.hintHoles[10-turn][j].pegColor = Integer.parseInt(hint.charAt(j)+"");
-                                Hole.hintHoles[10-turn][j].ghost = true;
+                        for (int j = 0; j < 4; j++) {
+                            if (hint.charAt(j) != '0') {
+                                Hole.hintHoles[10 - turn][j].pegColor = Integer.parseInt(hint.charAt(j) + "");
+                                Hole.hintHoles[10 - turn][j].ghost = true;
                             }
                         }
                         i--;
+                        popUps.add("Enter Hint");
                         continue;
                     }
                     if (MasterMind.clientMessagesIn.get(i).charAt(0) == 'C') {
                         String code = MasterMind.clientMessagesIn.get(i);
                         MasterMind.clientMessagesIn.remove(i);
 
-                        MasterMind.clientMessagesOut.add("[GenHint]"+code.substring(1));
-                        
+                        MasterMind.clientMessagesOut.add("[GenHint]" + code.substring(1));
+
                         for (int j = 1; j < 5; j++) {
                             int pegColor = Integer.parseInt(code.substring(j, j + 1));
                             if (pegColor != 0) {
                                 Hole.codeHoles[9 - turn][j - 1].pegColor = pegColor;
+                                Hole h = Hole.codeHoles[9 - turn][j - 1];
+                                Particle.addParticles(10, h.position.x, h.position.y, Peg.pegColors[pegColor - 1]);
                             }
                         }
 
@@ -164,15 +199,15 @@ public class Playing {
                 }
 
                 // acknowledgement
-                if(turn > 0 && acknowledge) {
+                if (turn > 0 && acknowledge) {
                     boolean ready = true;
-                    for(int i=0;i<4;i++) {
-                        if(Hole.hintHoles[10 - turn][i].ghost) {
+                    for (int i = 0; i < 4; i++) {
+                        if (Hole.hintHoles[10 - turn][i].ghost) {
                             ready = false;
                             break;
                         }
                     }
-                    if(ready) {
+                    if (ready) {
                         MasterMind.clientMessagesOut.add("[WA]acknowledgement");
                         acknowledge = false;
                         waiting = true;
@@ -181,8 +216,8 @@ public class Playing {
 
             }
 
-            if(!isBreaker) {
-                if(!waiting && turn == 0) {
+            if (!isBreaker) {
+                if (!waiting && turn == 0) {
 
                 }
             }
@@ -208,11 +243,8 @@ public class Playing {
         }
 
         // enter guess
-        if (MasterMind.clientReceivedMessage("[WC]SendGuessPlease")) {
-            popUps.add("Enter Guess");
-            waiting = false;
-        }
-        if (MasterMind.clientReceivedMessage("[WA]WaitingForGuess")) {
+        if (MasterMind.clientReceivedMessage("[WC]SendGuessPlease")
+                || MasterMind.clientReceivedMessage("[WA]SendGuessPlease")) {
             popUps.add("Enter Guess");
             waiting = false;
         }
@@ -223,14 +255,14 @@ public class Playing {
                 if (MasterMind.clientMessagesIn.get(i).charAt(0) == 'H') {
                     String hint = MasterMind.clientMessagesIn.get(i);
                     MasterMind.clientMessagesIn.remove(i);
-                    // if(isBreaker) {
                     waiting = false;
-                    popUps.add("Enter Code");
 
                     for (int j = 1; j < 5; j++) {
                         int pegColor = Integer.parseInt(hint.substring(j, j + 1));
                         if (pegColor != 0) {
                             Hole.hintHoles[10 - turn][j - 1].pegColor = pegColor;
+                            Hole h = Hole.hintHoles[10 - turn][j - 1];
+                            Particle.addParticles(10, h.position.x, h.position.y, Peg.pegColors[2 - pegColor + 4]);
                         }
                     }
                 }
@@ -292,10 +324,10 @@ public class Playing {
                             // if mouse is over a hole
                             if (h.mouseHovering()) {
                                 // make a peg at the hole
-                                pegs.add(new Peg(h.position.x, h.position.y - 10, h.pegColor,
-                                        h.type == HoleType.CODE ? Peg.PegType.CODE : Peg.PegType.HINT));
+                                pegs.add(new Peg(h.position.x, h.position.y - 10, h.pegColor, h.type == HoleType.CODE ? Peg.PegType.CODE : Peg.PegType.HINT));
                                 pegs.get(pegs.size() - 1).grabbed = true;
                                 Peg.globalGrabbed = true;
+                                Sounds.play("pickUp");
                                 // remove peg
                                 h.pegColor = -1;
                             }
@@ -308,13 +340,14 @@ public class Playing {
                     for (int x = 0; x < Hole.hintHoles[y].length; x++) {
                         Hole h = Hole.hintHoles[y][x];
                         // if there is a peg
-                        if (h.pegColor != -1 && !h.ghost)  {
+                        if (h.pegColor != -1 && !h.ghost) {
                             // if mouse is over a hole
                             if (h.mouseHovering()) {
                                 // make a peg at the hole
                                 pegs.add(new Peg(h.position.x, h.position.y - 10, h.pegColor, h.type == HoleType.CODE ? Peg.PegType.CODE : Peg.PegType.HINT));
                                 pegs.get(pegs.size() - 1).grabbed = true;
                                 Peg.globalGrabbed = true;
+                                Sounds.play("pickUp");
                                 // remove peg
                                 h.pegColor = -1;
                             }
@@ -344,10 +377,15 @@ public class Playing {
             showConfirm = false;
         }
 
+        // update particles
+        Particle.updateParticles();
+
         // confirm button
         if (showConfirm) {
             confirmButton.update();
         }
+
+        chatButton.update();
     }
 
     static void confirm() {
@@ -383,7 +421,7 @@ public class Playing {
         Draw.setColor(new Color(36, 36, 36));
         Draw.rect(290, 105 + (50 * (10 - turn)), 240, 50);
 
-        Draw.image("board", MasterMind.gw / 2 - 2, MasterMind.gh / 2, 0, 5);
+        Draw.image("board", 290, MasterMind.gh / 2, 0, 5);
 
         // draw bottom pegs
         for (int i = 0; i < bottomPegs.length; i++) {
@@ -406,10 +444,15 @@ public class Playing {
             pegs.get(i).draw();
         }
 
+        // draw particles
+        Particle.drawParticles();
+
         // confirm button
         if (showConfirm) {
             confirmButton.draw();
         }
+
+        chatButton.draw();
 
         Draw.setColor(Color.WHITE);
         Draw.setFontSize(2);
@@ -418,9 +461,9 @@ public class Playing {
 
         Draw.text((isBreaker ? "code breaker" : "code maker"), 400, 700);
 
-        if(!pegsToShow.equals("")) {
-            for(int i=0;i<4;i++) {
-                Draw.image("codePeg"+pegsToShow.charAt(i), 400 + i*16, 50, 0, 2);
+        if (!pegsToShow.equals("")) {
+            for (int i = 0; i < 4; i++) {
+                Draw.image("codePeg" + pegsToShow.charAt(i), 400 + i * 16, 50, 0, 2);
             }
         }
 
@@ -432,13 +475,26 @@ public class Playing {
         // handle pop ups
         if (popUps.size() > 0) {
             Draw.setFontSize(3);
-            Draw.text(popUps.get(0), 300, 30);
+            Draw.text(popUps.get(0), 300, 40 + (int) (Math.sin(popUpTime / 10.0) * 10));
 
             ++popUpTime;
             if (popUpTime >= 150) {
                 popUpTime = 0;
                 popUps.remove(0);
             }
+        }
+
+        // chat
+        Draw.setFontSize(1);
+        for (int i = 0; i < chatHistory.size(); i++) {
+            if (Draw.getWidthOfText(chatHistory.get(i)) > 300) {
+                String msg = chatHistory.get(i);
+                chatHistory.remove(i);
+                chatHistory.add(i, msg.substring(47));
+                chatHistory.add(i, msg.substring(0, 47));
+                chatScroll += 10;
+            }
+            Draw.text(chatHistory.get(i), 610, -chatScroll + 600 + i * 10);
         }
     }
 }

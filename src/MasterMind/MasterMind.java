@@ -1,5 +1,13 @@
 package MasterMind;
 
+/*
+James N
+2020.06.17
+MasterMind
+The server code was written in collaboration with will, clients were made separately 
+*/
+
+import java.awt.Color;
 import java.util.ArrayList;
 
 import MasterMind.StateManagers.Connecting;
@@ -9,18 +17,9 @@ import MasterMind.StateManagers.Results;
 import MasterMind.StateManagers.SelectRounds;
 import MasterMind.StateManagers.TitleScreen;
 import game.*;
+import game.audio.Sounds;
+import game.drawing.Camera;
 import game.drawing.Draw;
-import io.netty.handler.codec.http.HttpContentEncoder.Result;
-
-/*
-non essentials that would be nice to have:
-screen shake
-particles
-explosions?
-gold system
-shop with peg hats!
-big bright buttons
- */
 
 public class MasterMind extends GameJava {
 
@@ -49,9 +48,12 @@ public class MasterMind extends GameJava {
 
     static public boolean won;
 
+    static public int cameraShakeX = 0;
+    static public int cameraShakeY = 0;
+
     static public boolean clientReceivedMessage(String msg) {
-        for(int i=0;i<clientMessagesIn.size();i++) {
-            if(clientMessagesIn.get(i).equals(msg)) {
+        for (int i = 0; i < clientMessagesIn.size(); i++) {
+            if (clientMessagesIn.get(i).equals(msg)) {
                 clientMessagesIn.remove(i);
                 return true;
             }
@@ -60,8 +62,8 @@ public class MasterMind extends GameJava {
     }
 
     static public boolean botReceivedMessage(String msg) {
-        for(int i=0;i<botMessagesIn.size();i++) {
-            if(botMessagesIn.get(i).equals(msg)) {
+        for (int i = 0; i < botMessagesIn.size(); i++) {
+            if (botMessagesIn.get(i).equals(msg)) {
                 botMessagesIn.remove(i);
                 return true;
             }
@@ -70,13 +72,16 @@ public class MasterMind extends GameJava {
     }
 
     public MasterMind() {
-        super(600, 750, 60, 60);
+        super(900, 750, 60, 60);
 
         state = GameState.TITLE_SCREEN;
 
         // prevent game from being resized
         Draw.frame.setResizable(false);
         Draw.allowFullScreen = false;
+
+        Sounds.ajustGain("theme", 0.85f);
+        Sounds.loop("theme");
 
         LoopManager.startLoops(this);
     }
@@ -88,7 +93,7 @@ public class MasterMind extends GameJava {
 
     @Override
     public void update() {
-        if(updateDelay == 0) {
+        if (updateDelay == 0) {
             // determine if new state
             boolean isNewState = false;
             if (state != lastState) {
@@ -126,6 +131,12 @@ public class MasterMind extends GameJava {
 
     @Override
     public void draw() {
+        Camera.x = cameraShakeX;
+        Camera.y = cameraShakeY;
+
+        cameraShakeX -= cameraShakeX == 0 ? 0 : (cameraShakeX > 0 ? 1 : -1);
+        cameraShakeY -= cameraShakeY == 0 ? 0 : (cameraShakeY > 0 ? 1 : -1);
+
         switch (state) {
             case TITLE_SCREEN:
                 TitleScreen.drawTitleScreen();
@@ -150,19 +161,8 @@ public class MasterMind extends GameJava {
 
     @Override
     public void absoluteDraw() {
-        switch (state) {
-            case TITLE_SCREEN:
-                break;
-            case SELECTING_ROUNDS:
-                break;
-            case PRACTICE_CONNECTING:
-                break;
-            case CONNECTING:
-                break;
-            case PLAYING:
-                break;
-            case RESULTS:
-                break;
-        }
+        // divider for chat
+        Draw.setColor(new Color(36, 36, 36));
+        Draw.rect(600, 375, 3, 750);
     }
 }

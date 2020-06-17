@@ -2,6 +2,7 @@ package MasterMind.gameComponents;
 
 import game.Input;
 import game.Utils;
+import game.audio.Sounds;
 import game.drawing.Draw;
 import game.physics.Physics;
 import game.physics.Point;
@@ -22,6 +23,8 @@ public class Hole {
 
     public int pegColor = -1; // -1 means no peg assigned
 
+    boolean hoveredLastFrame = false;
+
     public static Hole[][] codeHoles = new Hole[10][4];
     public static Hole[][] hintHoles = new Hole[10][4];
 
@@ -34,7 +37,7 @@ public class Hole {
 
         for (int y = 0; y < hintHoles.length; y++) {
             for (int x = 0; x < hintHoles[y].length; x++) {
-                hintHoles[y][x] = new Hole(50 + (x % 2) * 60, 140 + (x>1 ? 1 : 0)  * 25 + y * 50, Hole.HoleType.HINT);
+                hintHoles[y][x] = new Hole(50 + (x % 2) * 60, 140 + (x > 1 ? 1 : 0) * 25 + y * 50, Hole.HoleType.HINT);
             }
         }
     }
@@ -53,6 +56,12 @@ public class Hole {
                 Draw.image("codePeg" + this.pegColor + "Top", (int) this.position.x, (int) this.position.y - 15, 0, 5);
                 if (mouseHovering()) {
                     Draw.image("codePegHoverTop", (int) this.position.x, (int) this.position.y - 15, 0, 5);
+                    if (!hoveredLastFrame) {
+                        Sounds.play("click");
+                        hoveredLastFrame = true;
+                    }
+                } else {
+                    hoveredLastFrame = false;
                 }
             }
             Draw.image("codeHoleFront", (int) this.position.x, (int) this.position.y - 15, 0, 5);
@@ -60,12 +69,18 @@ public class Hole {
         } else {
             Draw.image("hintHoleBack", (int) this.position.x, (int) this.position.y - 15, 0, 5);
             if (this.pegColor != -1) {
-                if(ghost) {
+                if (ghost) {
                     Draw.image("hintPeg" + this.pegColor + "TopGhost", (int) this.position.x, (int) this.position.y - 15, 0, 5);
                 } else {
                     Draw.image("hintPeg" + this.pegColor + "Top", (int) this.position.x, (int) this.position.y - 15, 0, 5);
                     if (mouseHovering()) {
                         Draw.image("hintPegHoverTop", (int) this.position.x, (int) this.position.y - 15, 0, 5);
+                        if (!hoveredLastFrame) {
+                            Sounds.play("click");
+                            hoveredLastFrame = true;
+                        }
+                    } else {
+                        hoveredLastFrame = false;
                     }
                 }
             }
@@ -88,6 +103,7 @@ public class Hole {
         return false;
     }
 
+    // empties all holes
     public static void clear() {
         for (int y = 0; y < codeHoles.length; y++) {
             for (int x = 0; x < codeHoles[y].length; x++) {

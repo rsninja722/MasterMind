@@ -1,7 +1,9 @@
 package MasterMind.gameComponents;
 
+import java.awt.Color;
 import game.Input;
 import game.Utils;
+import game.audio.Sounds;
 import game.drawing.Draw;
 import game.physics.Physics;
 import game.physics.Point;
@@ -26,6 +28,9 @@ public class Peg {
         CODE, HINT
     }
 
+    // used for particle effects
+    public static Color[] pegColors = { new Color(235, 225, 35), new Color(17, 97, 24), new Color(199, 39, 18), new Color(31, 191, 209), new Color(17, 18, 18), new Color(227, 230, 230) };
+
     // default to code peg size
     int w = 40;
     int h = 35;
@@ -41,12 +46,15 @@ public class Peg {
 
     public static boolean globalGrabbed = false;
 
+    boolean snappedLastFrame = false;
+    boolean hoveredLastFrame = false;
+
     public Peg(double x, double y, int color, PegType type) {
         this.x = x;
         this.y = y;
         this.color = color;
         this.type = type;
-        if(type == PegType.HINT) {
+        if (type == PegType.HINT) {
             this.w = 30;
             this.h = 15;
         }
@@ -59,10 +67,16 @@ public class Peg {
         // set draw position to nearest hole
         Hole nearestHole = nearestHoleTo(new Point(this.x, this.y + 50));
         if (nearestHole != null) {
+            if (!snappedLastFrame) {
+                Sounds.play("snap");
+                snappedLastFrame = true;
+            }
             Point nearestPos = nearestHole.position;
             if (nearestPos.x != -1 && nearestPos.y != -1) {
                 drawPosition = new Point(nearestPos.x, nearestPos.y - 50);
             }
+        } else {
+            snappedLastFrame = false;
         }
 
         // code peg
@@ -76,8 +90,14 @@ public class Peg {
             // outline for when grab is possible
             if (this.touchingMouse() && !this.grabbed) {
                 Draw.image("codePegHover", (int) drawPosition.x, (int) drawPosition.y + 10, 0, 5);
+                if (!hoveredLastFrame) {
+                    Sounds.play("click");
+                    hoveredLastFrame = true;
+                }
+            } else {
+                hoveredLastFrame = false;
             }
-        // hint peg
+            // hint peg
         } else {
             // shadow
             if (this.grabbed) {
@@ -88,6 +108,12 @@ public class Peg {
             // outline for when grab is possible
             if (this.touchingMouse() && !this.grabbed) {
                 Draw.image("hintPegHover", (int) drawPosition.x, (int) drawPosition.y + 10, 0, 5);
+                if (!hoveredLastFrame) {
+                    Sounds.play("click");
+                    hoveredLastFrame = true;
+                }
+            } else {
+                hoveredLastFrame = false;
             }
         }
     }
@@ -111,6 +137,7 @@ public class Peg {
                 nearest.pegColor = this.color;
                 nearest.type = this.type == PegType.CODE ? Hole.HoleType.CODE : Hole.HoleType.HINT;
                 nearest.ghost = false;
+                Particle.addParticles(10, nearest.position.x, nearest.position.y, pegColors[(this.type == PegType.CODE ? this.color - 1 : 2 - this.color + 4)]);
                 return true;
             }
 
@@ -120,6 +147,7 @@ public class Peg {
         if (this.touchingMouse() && Input.mouseClick(0) && !globalGrabbed) {
             this.grabbed = true;
             globalGrabbed = true;
+            Sounds.play("pickUp");
         }
         return false;
     }

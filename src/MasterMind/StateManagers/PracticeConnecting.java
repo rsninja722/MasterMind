@@ -19,7 +19,7 @@ public class PracticeConnecting {
         ConnectionHandler.startBotIfNull("127.0.0.1");
 
         // connect client to local server
-        if(ConnectionHandler.botConnected) {
+        if (ConnectionHandler.botConnected) {
             ConnectionHandler.startClientIfNull("127.0.0.1");
         }
 

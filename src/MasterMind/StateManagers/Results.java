@@ -17,7 +17,7 @@ public class Results {
         Draw.rect(0, 0, 2000, 2000);
 
         Draw.setFontSize(6);
-        if(MasterMind.won) {
+        if (MasterMind.won) {
             Draw.setColor(Color.YELLOW);
             Draw.text("You win!", 200, 300);
         } else {

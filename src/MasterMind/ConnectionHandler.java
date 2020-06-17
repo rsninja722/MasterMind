@@ -24,7 +24,7 @@ public class ConnectionHandler {
     public static boolean botConnected = false;
 
     public static void startServerIfNull() {
-        if(serverThread == null) {
+        if (serverThread == null) {
             serverThread = new ServerThread("server");
             serverThread.start();
         }

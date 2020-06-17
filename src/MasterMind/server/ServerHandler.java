@@ -19,7 +19,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
     static final List<Channel> channels = new ArrayList<Channel>();
 
     // amount of players currently in the game
-    static int playerCount = 0;
+    public static int playerCount = 0;
 
     // channel position of the code breaker
     static int codeBreaker = 0;
@@ -106,11 +106,11 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
     // what happens when a client sends a message
     @Override
     public void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
-        System.out.println("["+ctx.channel().id().asShortText()+":SERVER]" + msg);
+        System.out.println("[" + ctx.channel().id().asShortText() + ":SERVER]" + msg);
         if (msg.startsWith("[CHAT]")) {
-            messageAllClient(","+ctx.channel().id().asShortText() + msg);
+            messageAllClient(",[CHAT]" + "[" + ctx.channel().id().asShortText() + "]: " + msg.substring(6));
         } else if (msg.startsWith("[GenHint]")) {
-            ctx.writeAndFlush(",hint"+(generateHint(msg.substring(9)).substring(1)));
+            ctx.writeAndFlush(",hint" + (generateHint(msg.substring(9)).substring(1)));
         } else {
             switch (serverState) {
                 case AcceptPlayers:
@@ -188,7 +188,6 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
     public void handleWaitForCode(ChannelHandlerContext ctx, String msg) {
         if (isMaker(ctx) && msg.charAt(0) == 'C') {
             code = msg.substring(1);
-            System.out.println(code);
             if (verifyCode(code)) {
                 System.out.println("Code has been varified");
                 messageAllClient(",[WC]CodeHasBeenSelected");
@@ -270,7 +269,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
     public void handleWaitForAcknowledgement(ChannelHandlerContext ctx, String msg) {
         if (isMaker(ctx) && msg.equals("[WA]acknowledgement")) {
             hint = generateHint(codeGuess);
-            messageAllClient(","+hint);
+            messageAllClient("," + hint);
             messageAllClient(",[WA]WaitingForGuess");
             messageCodeBreaker(",[WA]SendGuessPlease");
             if (codeBreaker == 0) {

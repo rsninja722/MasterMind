@@ -22,6 +22,11 @@ public class TitleScreen {
         Draw.rect(0, 0, 2000, 2000);
         practiceButton.draw();
         playButton.draw();
+
+        Draw.setColor(Color.WHITE);
+        Draw.setFontSize(6);
+        Draw.text("Master", 150, 100);
+        Draw.text("Mind", 225, 175);
     }
 
     // button callbacks

@@ -37,9 +37,9 @@ public class Button {
         this.text = text;
         int size = 4;
         Draw.setFontSize(size);
-        while(Draw.getWidthOfText(text) > w) {
+        while (Draw.getWidthOfText(text) > w) {
             Draw.setFontSize(--size);
-            if(size == 1) {
+            if (size == 1) {
                 break;
             }
         }
@@ -91,7 +91,7 @@ public class Button {
     public void update() {
         // when clicked, call callback
         if (Physics.rectpoint(this.rect, Input.rawMousePos) && Input.mouseClick(0)) {
-            // Sounds.play("bigStep");
+            Sounds.play("place");
             this.callBack.run();
         }
     }

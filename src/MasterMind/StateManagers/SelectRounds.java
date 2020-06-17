@@ -9,15 +9,18 @@ import game.drawing.Draw;
 
 public class SelectRounds {
 
+    static boolean showReady = true;
 
     static Button decreaseButton = new Button(200, 300, 35, 35, "-", SelectRounds::decreaseRoundCount);
     static Button increaseButton = new Button(400, 300, 35, 35, "+", SelectRounds::increaseRoundCount);
     static Button readyButton = new Button(300, 500, 100, 50, "ready", SelectRounds::ready);
-    
+
     public static void handleSelectRounds(boolean isNewState) {
         increaseButton.update();
         decreaseButton.update();
-        readyButton.update();
+        if (showReady) {
+            readyButton.update();
+        }
 
         for (int i = 0; i < MasterMind.clientMessagesIn.size(); i++) {
             if (MasterMind.clientMessagesIn.get(i).startsWith("[AP]RoundsSetTo")) {
@@ -26,20 +29,21 @@ public class SelectRounds {
             }
         }
 
-        if(MasterMind.clientReceivedMessage("[AP]Game Starting")) {
+        if (MasterMind.clientReceivedMessage("[AP]Game Starting")) {
             MasterMind.state = GameState.PLAYING;
         }
-        
-        
+
     }
 
     public static void ready() {
-        if(MasterMind.isPractice) {
+        if (MasterMind.isPractice) {
             MasterMind.botMessagesOut.add("[AP]ready");
 
         }
-        
+
         MasterMind.clientMessagesOut.add("[AP]ready");
+
+        showReady = false;
     }
 
     public static void drawSelectRounds() {
@@ -59,7 +63,9 @@ public class SelectRounds {
 
         increaseButton.draw();
         decreaseButton.draw();
-        readyButton.draw();
+        if (showReady) {
+            readyButton.draw();
+        }
 
     }
 
@@ -68,7 +74,7 @@ public class SelectRounds {
     }
 
     public static void decreaseRoundCount() {
-        if(MasterMind.rounds > 1) {
+        if (MasterMind.rounds > 1) {
             MasterMind.clientMessagesOut.add("[AP]rounds" + (MasterMind.rounds - 1));
         }
     }
