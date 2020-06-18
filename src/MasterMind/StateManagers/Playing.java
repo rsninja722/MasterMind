@@ -166,14 +166,21 @@ public class Playing {
                         MasterMind.clientMessagesIn.remove(i);
                         acknowledge = true;
                         waiting = false;
+                        int wrongCount = 0;
                         for (int j = 0; j < 4; j++) {
                             if (hint.charAt(j) != '0') {
                                 Hole.hintHoles[10 - turn][j].pegColor = Integer.parseInt(hint.charAt(j) + "");
                                 Hole.hintHoles[10 - turn][j].ghost = true;
+                            } else {
+                            	wrongCount++;
                             }
                         }
                         i--;
-                        popUps.add("Enter Hint");
+                        if(wrongCount == 4) {
+                        	MasterMind.clientMessagesOut.add("[WA]acknowledgement");
+                        } else {
+                        	popUps.add("Enter Hint");
+                        }
                         continue;
                     }
                     if (MasterMind.clientMessagesIn.get(i).charAt(0) == 'C') {
